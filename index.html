@@ -61,7 +61,7 @@
     }
     .number-box input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(22,135,217,.14); }
     .unit { color: var(--muted); font-size: .85rem; }
-    .metrics { display: flex; flex-wrap: wrap; gap: 10px 10px; align-items: stretch; min-width: 0; }
+    .metrics { display: flex; gap: 10px 10px; align-items: stretch; min-width: 0; }
     .metric { min-width: 150px; padding: 8px 12px; border-left: 1px solid var(--line); }
     .metric-label { display: block; color: var(--muted); font-size: .72rem; }
     .metric-value { display: block; margin-top: 3px; font-size: .98rem; font-weight: 780; white-space: nowrap; }
@@ -98,7 +98,6 @@
       background-size: 24px 24px;
     }
     #planner { width: 100%; height: 100%; min-height: 545px; touch-action: none; user-select: none; }
-    .canvas-foot { margin: 0 16px 14px; color: var(--muted); font-size: .72rem; font-weight: 700; text-align: center; line-height: 1.6; }
     .panel { min-height: 660px; display: flex; flex-direction: column; overflow: hidden; }
     .panel-head { padding: 17px 18px 14px; border-bottom: 1px solid var(--line); }
     .panel-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -122,12 +121,6 @@
     .item-result { display: flex; align-items: baseline; gap: 7px; margin: 10px 0 11px; }
     .slot-result { font-size: 1.28rem; font-weight: 860; letter-spacing: -.04em; }
     .mm-result { color: var(--muted); font-size: .84rem; font-weight: 700; }
-    .item-range { margin: -5px 0 1px; color: var(--muted); font-size: .74rem; font-weight: 700; }
-    .bay-panel { border-bottom: 1px solid var(--line); background: #f8fafc; }
-    .bay-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 18px 7px; color: #475569; font-size: .76rem; font-weight: 820; }
-    .bay-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px 13px; max-height: 140px; overflow: auto; }
-    .bay-chip { padding: 5px 9px; border: 1px solid #dbe2ea; border-radius: 999px; background: #fff; color: #475569; font-size: .73rem; font-weight: 700; white-space: nowrap; }
-    .bay-chip b { color: #0f172a; font-weight: 860; }
     .coord-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 7px; align-items: end; }
     .coord label { display: block; margin-bottom: 4px; color: var(--muted); font-size: .68rem; font-weight: 700; }
     .coord input { width: 100%; height: 34px; padding: 0 7px; border: 1px solid #d6dee8; border-radius: 8px; background: white; text-align: center; font-weight: 700; outline: none; }
@@ -164,7 +157,6 @@
       .control-strip { grid-template-columns: 1fr 1fr; padding: 14px; }
       .metrics { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
       .metric { min-width: 0; border-left: 0; border-top: 1px solid var(--line); padding: 10px 2px 2px; }
-      .metric:last-child { grid-column: 1 / -1; }
       .actions { grid-column: 1 / -1; }
       .actions .btn { flex: 1; }
       .toolbar { align-items: flex-start; flex-direction: column; }
@@ -201,8 +193,7 @@
       </div>
       <div class="metrics" aria-live="polite">
         <div class="metric"><span class="metric-label">盒体外形</span><span class="metric-value" id="outerSize">251.5 × 251.5 mm</span></div>
-        <div class="metric"><span class="metric-label">内腔开口</span><span class="metric-value" id="cavitySize">243.0 × 243.0 mm</span></div>
-        <div class="metric"><span class="metric-label">可插槽位</span><span class="metric-value" id="slotSize">X 40槽 · Y 40槽</span></div>
+        <div class="metric"><span class="metric-label">完整槽位</span><span class="metric-value" id="slotSize">X 40槽 · Y 40槽</span></div>
       </div>
       <div class="actions">
         <button class="btn danger" id="clearAll" type="button">清空分隔板</button>
@@ -214,17 +205,12 @@
         <div class="canvas-wrap">
           <svg id="planner" role="img" aria-label="Gridfinity 盒体槽位规划图"></svg>
         </div>
-        <p class="canvas-foot">凹槽 3 × 1.1 mm · 槽距 6 mm · 首槽中心距内壁 4.5 mm · 图上 1 槽 = 实物 1 个凹槽</p>
       </section>
 
       <aside class="card panel" aria-label="分隔板清单">
         <div class="panel-head">
           <div class="panel-head-row"><h2>分隔板清单</h2><span class="count-badge" id="dividerCount">0 块</span></div>
-          <p class="panel-note">边框拖动新增 · 端点吸附到墙或相邻板 · 标注拖动换槽 · 右键删除</p>
-        </div>
-        <div class="bay-panel">
-          <div class="bay-head"><span>隔间（宽 × 高）</span><span class="count-badge" id="bayCount">1 个</span></div>
-          <div class="bay-list" id="bayList"></div>
+          <p class="panel-note">边框拖动新增 · 线身延长/分支 · 标注拖动移动 · 右键删除</p>
         </div>
         <div class="divider-list" id="dividerList"></div>
         <div class="summary"><button class="btn primary" id="copyList" type="button">复制定制清单</button></div>
@@ -307,11 +293,10 @@
 
       const grooveAtMm = (ax, mm) => Math.min(ax.N, Math.max(1, Math.round((mm - END_GAP) / PITCH) + 1));
 
-      // 支撑序号：左/上墙 = 0，第 k 槽 = k，右/下墙 = N + 1
-      // （墙不能和“第 N 槽”共用同一个序号，否则“墙 → 第 N 槽”会被算成 0 槽）
+      // 坐标（复制清单里的起点/终点）：左/上墙 = 0，第 k 槽 = k，右/下墙 = N —— 原版口径，不动
       function supportIndex(ax, mm) {
         if (Math.abs(mm) <= .8) return 0;
-        if (Math.abs(mm - ax.L) <= .8) return ax.N + 1;
+        if (Math.abs(mm - ax.L) <= .8) return ax.N;
         return grooveAtMm(ax, mm);
       }
 
@@ -337,29 +322,21 @@
         return best;
       }
 
-      // 槽数 = 这段跨度里“空着的槽位”数量 = 两端支撑序号之差 − 1
-      // 例：通长 12 槽；墙 → 第 4 槽 = 3 槽；第 4 槽 → 第 8 槽 = 3 槽；第 8 槽 → 墙 = 4 槽
+      // 槽数 = 这段跨度里剩下的空槽数（末端插着分隔板时，它自己占掉一个槽，要减 1）；板长 = 槽数 × 6 + 5
+      // 例（2 格宽，V1 插第 4 槽、V2 插第 8 槽）：墙 → 第 4 槽 = 3 槽 23mm；
+      //   第 4 → 第 8 槽 = 3 槽 23mm；第 8 槽 → 墙 = 4 槽 29mm；3+1+3+1+4 = 12
       function slotsOf(d) {
         const ax = d.orientation === 'H' ? axX() : axY();
         const a = d.orientation === 'H' ? d.x1 : d.y1;
         const b = d.orientation === 'H' ? d.x2 : d.y2;
-        return Math.max(0, Math.abs(supportIndex(ax, b) - supportIndex(ax, a)) - 1);
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        const span = Math.abs(supportIndex(ax, hi) - supportIndex(ax, lo));
+        const farIsWall = Math.abs(hi - ax.L) <= .8;
+        return Math.max(1, span - (farIsWall ? 0 : 1));
       }
 
       function posSlotOf(d) {
         return d.orientation === 'H' ? grooveAtMm(axY(), d.y1) : grooveAtMm(axX(), d.x1);
-      }
-
-      function spanOf(d) {
-        const a = d.orientation === 'H' ? d.x1 : d.y1;
-        const b = d.orientation === 'H' ? d.x2 : d.y2;
-        return [Math.min(a, b), Math.max(a, b)];
-      }
-
-      // 端点叫法：墙 / 第 k 槽（墙和最后一槽的索引值相同，必须看 mm 才分得清）
-      function supportLabel(ax, mm) {
-        if (Math.abs(mm) <= .8 || Math.abs(mm - ax.L) <= .8) return '墙';
-        return `第 ${grooveAtMm(ax, mm)} 槽`;
       }
 
       function makeDraft(orientation, posIdx, a, b) {
@@ -449,7 +426,7 @@
         return comps;
       }
 
-      function draw(g = geometry(), comps = compartments(g)) {
+      function draw(g = geometry()) {
         svg.innerHTML = '';
         svg.setAttribute('viewBox', `0 0 ${layout.vbW} ${layout.vbH}`);
         const ax = g.ax, ay = g.ay;
@@ -501,17 +478,6 @@
           grooves.append(node('path', { d: `M ${rightX + depth} ${y0} V ${y1} H ${rightX + r} Q ${rightX} ${y1} ${rightX} ${y1 - r} V ${y0 + r} Q ${rightX} ${y0} ${rightX + r} ${y0} Z` }));
         }
         svg.append(grooves);
-
-        // 隔间尺寸标注
-        const bayLabels = node('g', { 'pointer-events': 'none' });
-        for (const c of comps) {
-          if ((c.x1 - c.x0) * g.scale < 34 || (c.y1 - c.y0) * g.scale < 18) continue;
-          bayLabels.append(node('text', {
-            x: X(c.cx), y: Y(c.cy) + 3.5, fill: '#93a4b8', 'font-size': 10.5, 'font-weight': 800,
-            'text-anchor': 'middle', stroke: '#fff', 'stroke-width': 3.5, 'paint-order': 'stroke'
-          }, `${c.wSlots}×${c.hSlots} 槽`));
-        }
-        svg.append(bayLabels);
 
         // 刻度：槽位序号（1..N），标 1、5 的倍数、N
         for (let k = 1; k <= ax.N; k++) {
@@ -748,45 +714,30 @@
         }
         state.dividers.forEach((d, index) => {
           const slots = slotsOf(d);
-          const axis = d.orientation === 'H' ? 'X' : 'Y';
-          const ax = d.orientation === 'H' ? axX() : axY();
-          const [s0, s1] = spanOf(d).map(mm => supportLabel(ax, mm));
+          const posIndex = d.orientation === 'H' ? grooveAtMm(axY(), d.y1) : grooveAtMm(axX(), d.x1);
           const item = document.createElement('article');
           item.className = 'divider-item' + (d.id === state.selected ? ' selected' : '');
           item.addEventListener('click', () => { state.selected = d.id; render(); });
           item.innerHTML = `
             <div class="item-top">
-              <div class="item-name"><span class="swatch" style="background:${colors[index % colors.length]}"></span>${labelFor(d)} · ${d.orientation === 'H' ? '横向' : '纵向'} · 第 ${posSlotOf(d)} 槽</div>
+              <div class="item-name"><span class="swatch" style="background:${colors[index % colors.length]}"></span>${labelFor(d)} · ${d.orientation === 'H' ? `横向 · Y${posIndex}` : `纵向 · X${posIndex}`}</div>
               <button class="delete-btn" type="button" aria-label="删除 ${labelFor(d)}">×</button>
             </div>
-            <div class="item-result"><span class="slot-result">${slots} 槽</span><span class="mm-result">${lengthForSlots(slots)} mm</span></div>
-            <div class="item-range">${axis}：${s0} → ${s1} · 板长 = ${slots} × 6 + 5</div>`;
+            <div class="item-result"><span class="slot-result">${slots} 槽</span><span class="mm-result">${lengthForSlots(slots)} mm</span></div>`;
           item.querySelector('.delete-btn').addEventListener('click', evt => { evt.stopPropagation(); deleteDivider(d.id); });
           list.append(item);
         });
       }
 
-      function renderBays(comps) {
-        el('bayCount').textContent = `${comps.length} 个`;
-        el('bayList').innerHTML = comps.map(c => {
-          const tip = `宽 ${c.wSlots} 槽 × 高 ${c.hSlots} 槽 · 净宽 ${round1(c.wMm)}mm × 净高 ${round1(c.hMm)}mm`;
-          return `<span class="bay-chip" title="${tip}"><b>${c.wSlots}×${c.hSlots}</b> 槽 · ${round1(c.wMm)}×${round1(c.hMm)} mm</span>`;
-        }).join('');
-      }
-
       function renderMetrics() {
         el('outerSize').textContent = `${outerForCells(state.xCells).toFixed(1)} × ${outerForCells(state.yCells).toFixed(1)} mm`;
-        el('cavitySize').textContent = `${cavityForCells(state.xCells).toFixed(1)} × ${cavityForCells(state.yCells).toFixed(1)} mm`;
         el('slotSize').textContent = `X ${maxX()} 槽 · Y ${maxY()} 槽`;
       }
 
       function render() {
         renderMetrics();
-        const g = geometry();
-        const comps = compartments(g);
-        renderBays(comps);
         renderList();
-        draw(g, comps);
+        draw();
       }
 
       let toastTimer;
@@ -798,20 +749,19 @@
 
       async function copyList() {
         if (!state.dividers.length) return showToast('还没有分隔板可以复制');
-        const comps = compartments(geometry());
         const rows = [
           `Gridfinity 盒体：${state.xCells} × ${state.yCells} 格`,
           `盒体外形：${outerForCells(state.xCells).toFixed(1)} × ${outerForCells(state.yCells).toFixed(1)} mm`,
-          `内腔开口：${cavityForCells(state.xCells).toFixed(1)} × ${cavityForCells(state.yCells).toFixed(1)} mm`,
-          `槽位：X ${maxX()} 个 · Y ${maxY()} 个（槽宽 ${GROOVE_W} / 槽距 ${PITCH} / 槽深 ${GROOVE_D} mm）`, '',
-          '分隔板（槽数 = 这段跨度里空出来的槽位数，板长 = 槽数 × 6 + 5 mm）：',
+          `槽位范围：X ${maxX()}槽 / Y ${maxY()}槽`, '',
           ...state.dividers.map(d => {
             const ax = d.orientation === 'H' ? axX() : axY();
-            const [s0, s1] = spanOf(d).map(mm => supportLabel(ax, mm));
-            return `${labelFor(d)} ${d.orientation === 'H' ? '横向' : '纵向'}：第 ${posSlotOf(d)} 槽｜${d.orientation === 'H' ? 'X' : 'Y'} ${s0} → ${s1}｜${slotsOf(d)} 槽｜${lengthForSlots(slotsOf(d))} mm`;
-          }), '',
-          `隔间（宽 × 高）：${comps.length} 个`,
-          ...comps.map(c => `${c.wSlots} × ${c.hSlots} 槽｜净宽 ${round1(c.wMm)} × ${round1(c.hMm)} mm`)
+            const a = d.orientation === 'H' ? d.x1 : d.y1;
+            const b = d.orientation === 'H' ? d.x2 : d.y2;
+            const i0 = supportIndex(ax, Math.min(a, b));
+            const i1 = supportIndex(ax, Math.max(a, b));
+            const n = slotsOf(d);
+            return `${labelFor(d)} ${d.orientation === 'H' ? '横向' : '纵向'}：${i0} → ${i1}｜${n}槽｜${lengthForSlots(n)} mm`;
+          })
         ];
         try { await navigator.clipboard.writeText(rows.join('\n')); showToast('定制清单已复制'); }
         catch { showToast('浏览器未允许复制，请手动记录清单'); }
